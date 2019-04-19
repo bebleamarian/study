@@ -1,0 +1,37 @@
+									ciphers
+
+The EVP cipher routines are a high level interface to certain symmetric ciphers.
+
+EVP_CIPHER_CTX_new() creates a cipher context.
+
+EVP_CIPHER_CTX_free() clears all information from a cipher context and free up any allocated memory associate with it, including ctx itself. This function should be called after all operations using a cipher are complete so sensitive information does not remain in memory.
+
+EVP_EncryptInit_ex() sets up cipher context ctx for encryption with cipher type from ENGINE impl. ctx must be created before calling this function. type is normally supplied by a function such as EVP_aes_256_cbc(). If impl is NULL then the default implementation is used. key is the symmetric key to use and iv is the IV to use (if necessary), the actual number of bytes used for the key and IV depends on the cipher. It is possible to set all parameters to NULL except type in an initial call and supply the remaining parameters in subsequent calls, all of which have type set to NULL. This is done when the default cipher parameters are not appropriate.
+
+EVP_EncryptUpdate() encrypts inl bytes from the buffer in and writes the encrypted version to out. This function can be called multiple times to encrypt successive blocks of data. The amount of data written depends on the block alignment of the encrypted data: as a result the amount of data written may be anything from zero bytes to (inl + cipher_block_size - 1) so out should contain sufficient room. The actual number of bytes written is placed in outl. It also checks if in and out are partially overlapping, and if they are 0 is returned to indicate failure.
+
+If padding is enabled (the default) then EVP_EncryptFinal_ex() encrypts the "final" data, that is any data that remains in a partial block. It uses standard block padding (aka PKCS padding) as described in the NOTES section, below. The encrypted final data is written to out which should have sufficient space for one cipher block. The number of bytes written is placed in outl. After this function is called the encryption operation is finished and no further calls to EVP_EncryptUpdate() should be made.
+
+If padding is disabled then EVP_EncryptFinal_ex() will not encrypt any more data and it will return an error if any data remains in a partial block: that is if the total data length is not a multiple of the block size.
+
+EVP_DecryptInit_ex(), EVP_DecryptUpdate() and EVP_DecryptFinal_ex() are the corresponding decryption operations. EVP_DecryptFinal() will return an error code if padding is enabled and the final block is not correctly formatted. The parameters and restrictions are identical to the encryption operations except that if padding is enabled the decrypted data buffer out passed to EVP_DecryptUpdate() should have sufficient room for (inl + cipher_block_size) bytes unless the cipher block size is 1 in which case inl bytes is sufficient.
+
+EVP_CipherInit_ex(), EVP_CipherUpdate() and EVP_CipherFinal_ex() are functions that can be used for decryption or encryption. The operation performed depends on the value of the enc parameter. It should be set to 1 for encryption, 0 for decryption and -1 to leave the value unchanged (the actual value of 'enc' being supplied in a previous call).
+
+EVP_CIPHER_CTX_reset() clears all information from a cipher context and free up any allocated memory associate with it, except the ctx itself. This function should be called anytime ctx is to be reused for another EVP_CipherInit() / EVP_CipherUpdate() / EVP_CipherFinal() series of calls.
+
+EVP_EncryptInit(), EVP_DecryptInit() and EVP_CipherInit() behave in a similar way to EVP_EncryptInit_ex(), EVP_DecryptInit_ex() and EVP_CipherInit_ex() except they always use the default cipher implementation.
+
+EVP_EncryptFinal(), EVP_DecryptFinal() and EVP_CipherFinal() are identical to EVP_EncryptFinal_ex(), EVP_DecryptFinal_ex() and EVP_CipherFinal_ex(). In previous releases they also cleaned up the ctx, but this is no longer done and EVP_CIPHER_CTX_clean() must be called to free any context resources.
+
+EVP_get_cipherbyname(), EVP_get_cipherbynid() and EVP_get_cipherbyobj() return an EVP_CIPHER structure when passed a cipher name, a NID or an ASN1_OBJECT structure.
+
+EVP_CIPHER_nid() and EVP_CIPHER_CTX_nid() return the NID of a cipher when passed an EVP_CIPHER or EVP_CIPHER_CTX structure. The actual NID value is an internal value which may not have a corresponding OBJECT IDENTIFIER.
+
+EVP_CIPHER_CTX_set_padding() enables or disables padding. This function should be called after the context is set up for encryption or decryption with EVP_EncryptInit_ex(), EVP_DecryptInit_ex() or EVP_CipherInit_ex(). By default encryption operations are padded using standard block padding and the padding is checked and removed when decrypting. If the pad parameter is zero then no padding is performed, the total amount of data encrypted or decrypted must then be a multiple of the block size or an error will occur.
+
+EVP_CIPHER_key_length() and EVP_CIPHER_CTX_key_length() return the key length of a cipher when passed an EVP_CIPHER or EVP_CIPHER_CTX structure. The constant EVP_MAX_KEY_LENGTH is the maximum key length for all ciphers. Note: although EVP_CIPHER_key_length() is fixed for a given cipher, the value of EVP_CIPHER_CTX_key_length() may be different for variable key length ciphers.
+
+EVP_CIPHER_CTX_set_key_length() sets the key length of the cipher ctx. If the cipher is a fixed length cipher then attempting to set the key length to any value other than the fixed value is an error.
+
+EVP_CIPHER_iv_length() and EVP_CIPHER_CTX_iv_length() return the IV length of a cipher when passed an EVP_CIPHER or EVP_CIPHER_CTX. It will return zero if the cipher does not use an IV. The constant EVP_MAX_IV_LENGTH is the maximum IV length for all ciphers.
